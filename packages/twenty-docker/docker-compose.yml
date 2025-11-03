@@ -6,10 +6,10 @@ services:
     volumes:
       - server-local-data:/app/packages/twenty-server/.local-storage
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"  # Only expose to localhost - nginx will proxy
     environment:
       NODE_PORT: 3000
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/default
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-default}
       SERVER_URL: ${SERVER_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       DISABLE_DB_MIGRATIONS: ${DISABLE_DB_MIGRATIONS}
@@ -19,6 +19,9 @@ services:
       STORAGE_S3_REGION: ${STORAGE_S3_REGION}
       STORAGE_S3_NAME: ${STORAGE_S3_NAME}
       STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      STORAGE_S3_FORCE_PATH_STYLE: ${STORAGE_S3_FORCE_PATH_STYLE}
 
       APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
       # MESSAGING_PROVIDER_GMAIL_ENABLED: ${MESSAGING_PROVIDER_GMAIL_ENABLED}
@@ -56,6 +59,8 @@ services:
       timeout: 5s
       retries: 20
     restart: always
+    security_opt:
+      - no-new-privileges:true
 
   worker:
     image: twentycrm/twenty:${TAG:-latest}
@@ -63,7 +68,7 @@ services:
       - server-local-data:/app/packages/twenty-server/.local-storage
     command: ["yarn", "worker:prod"]
     environment:
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/default
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-default}
       SERVER_URL: ${SERVER_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       DISABLE_DB_MIGRATIONS: "true" # it already runs on the server
@@ -73,6 +78,9 @@ services:
       STORAGE_S3_REGION: ${STORAGE_S3_REGION}
       STORAGE_S3_NAME: ${STORAGE_S3_NAME}
       STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      STORAGE_S3_FORCE_PATH_STYLE: ${STORAGE_S3_FORCE_PATH_STYLE}
 
       APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
       # MESSAGING_PROVIDER_GMAIL_ENABLED: ${MESSAGING_PROVIDER_GMAIL_ENABLED}
@@ -105,11 +113,15 @@ services:
       server:
         condition: service_healthy
     restart: always
+    security_opt:
+      - no-new-privileges:true
 
   db:
     image: postgres:16
     volumes:
       - db-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:54320:5432"  # Non-default external port, only localhost
     environment:
       POSTGRES_DB: ${PG_DATABASE_NAME:-default}
       POSTGRES_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
@@ -120,17 +132,48 @@ services:
       timeout: 5s
       retries: 10
     restart: always
+    security_opt:
+      - no-new-privileges:true
+    shm_size: 128mb
 
   redis:
-    image: redis
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    ports:
+      - "127.0.0.1:63790:6379"  # Non-default external port, only localhost
     restart: always
-    command: ["--maxmemory-policy", "noeviction"]
+    command: ["redis-server", "--maxmemory-policy", "noeviction", "--save", "60", "1", "--loglevel", "warning"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 10
+    security_opt:
+      - no-new-privileges:true
+
+  minio:
+    image: quay.io/minio/minio:latest
+    volumes:
+      - minio-data:/data
+    ports:
+      - "127.0.0.1:9100:9000"  # API - Non-default external port, only localhost
+      - "127.0.0.1:9101:9001"  # Console - Non-default external port, only localhost
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-minioadmin123}
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: always
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   db-data:
   server-local-data:
+  redis-data:
+  minio-data:
