@@ -9,8 +9,9 @@ import { isPageLayoutInEditModeComponentState } from '@/page-layout/states/isPag
 import { WidgetCard } from '@/page-layout/widgets/widget-card/components/WidgetCard';
 import { WidgetCardContent } from '@/page-layout/widgets/widget-card/components/WidgetCardContent';
 import { WidgetCardHeader } from '@/page-layout/widgets/widget-card/components/WidgetCardHeader';
-import { I18nFrontDecorator } from '~/testing/decorators/I18nFrontDecorator';
 import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { PageLayoutType } from '~/generated/graphql';
+import { I18nFrontDecorator } from '~/testing/decorators/I18nFrontDecorator';
 
 const StyledContainer = styled.div`
   height: 200px;
@@ -70,22 +71,32 @@ export const Default: Story = {
     pseudo: { hover: false },
   },
   args: {
-    widgetCardContext: 'dashboard',
+    pageLayoutType: PageLayoutType.DASHBOARD,
+    layoutMode: 'grid',
+    isInPinnedTab: false,
     isEditing: false,
     isDragging: false,
   },
   render: (args) => (
     <WidgetCard
-      widgetCardContext={args.widgetCardContext}
+      pageLayoutType={args.pageLayoutType}
+      layoutMode={args.layoutMode}
+      isInPinnedTab={args.isInPinnedTab}
       isEditing={args.isEditing}
       isDragging={args.isDragging}
     >
       <WidgetCardHeader
+        widgetId="story-widget"
         isInEditMode={true}
         onRemove={() => {}}
         title="Widget name"
       />
-      <WidgetCardContent widgetCardContext={args.widgetCardContext}>
+      <WidgetCardContent
+        pageLayoutType={args.pageLayoutType}
+        layoutMode={args.layoutMode}
+        isInPinnedTab={args.isInPinnedTab}
+        isPageLayoutInEditMode={args.isEditing}
+      >
         <StyledMockContent>Widget</StyledMockContent>
       </WidgetCardContent>
     </WidgetCard>
@@ -112,20 +123,24 @@ export const Catalog: CatalogStory<Story, typeof WidgetCard> = {
           name: 'contextVariant',
           values: [
             'Record Page - Default',
+            'Record Page - Default - Pinned',
             'Record Page - Restriction',
+            'Record Page - Restriction - Pinned',
             'Dashboard - Default',
             'Dashboard - Restriction',
           ],
           props: (contextName: string) => {
-            const widgetCardContext = contextName.includes('Record')
-              ? 'recordPage'
-              : 'dashboard';
+            const pageLayoutType = contextName.includes('Record')
+              ? PageLayoutType.RECORD_PAGE
+              : PageLayoutType.DASHBOARD;
             const hasRestriction = contextName.includes('Restriction');
+            const isInPinnedTab = contextName.includes('Pinned');
 
             return {
-              widgetCardContext,
+              pageLayoutType,
               contextVariant: contextName,
               hasRestriction,
+              isInPinnedTab,
             };
           },
         },
@@ -162,8 +177,11 @@ export const Catalog: CatalogStory<Story, typeof WidgetCard> = {
   },
   render: (args: any) => {
     const isReadMode = args.state === 'Read Mode';
-    const widgetCardContext = args.widgetCardContext || 'dashboard';
+    const pageLayoutType = args.pageLayoutType || PageLayoutType.DASHBOARD;
+    const layoutMode = args.layoutMode || 'grid';
+    const isInPinnedTab = args.isInPinnedTab || false;
     const hasRestriction = args.hasRestriction || false;
+    const isPageLayoutInEditMode = false;
 
     return (
       <PageLayoutTestWrapper>
@@ -172,9 +190,12 @@ export const Catalog: CatalogStory<Story, typeof WidgetCard> = {
             className={args.className}
             isDragging={args.isDragging ?? false}
             isEditing={args.isEditing ?? false}
-            widgetCardContext={widgetCardContext}
+            pageLayoutType={pageLayoutType}
+            layoutMode={layoutMode}
+            isInPinnedTab={isInPinnedTab}
           >
             <WidgetCardHeader
+              widgetId="catalog-widget"
               forbiddenDisplay={
                 hasRestriction ? <ForbiddenFieldDisplay /> : undefined
               }
@@ -182,7 +203,12 @@ export const Catalog: CatalogStory<Story, typeof WidgetCard> = {
               onRemove={!isReadMode ? () => {} : undefined}
               title="Widget name"
             />
-            <WidgetCardContent widgetCardContext={widgetCardContext}>
+            <WidgetCardContent
+              pageLayoutType={pageLayoutType}
+              layoutMode={layoutMode}
+              isInPinnedTab={isInPinnedTab}
+              isPageLayoutInEditMode={isPageLayoutInEditMode}
+            >
               <StyledMockContent>Widget</StyledMockContent>
             </WidgetCardContent>
           </WidgetCard>

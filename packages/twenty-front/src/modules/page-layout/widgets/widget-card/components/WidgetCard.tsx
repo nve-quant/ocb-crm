@@ -1,45 +1,62 @@
 import { isPageLayoutInEditModeComponentState } from '@/page-layout/states/isPageLayoutInEditModeComponentState';
+import { type PageLayoutTabLayoutMode } from '@/page-layout/types/PageLayoutTabLayoutMode';
 import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
 import { css } from '@emotion/react';
 import styled from '@emotion/styled';
 import { type ReactNode } from 'react';
-import { assertUnreachable, isDefined } from 'twenty-shared/utils';
-
-import { type WidgetCardContext } from '../types/WidgetCardContext';
+import { isDefined } from 'twenty-shared/utils';
+import { PageLayoutType } from '~/generated/graphql';
 
 export type WidgetCardProps = {
   children?: ReactNode;
-  widgetCardContext: WidgetCardContext;
+  pageLayoutType: PageLayoutType;
+  layoutMode: PageLayoutTabLayoutMode;
   onClick?: () => void;
   isEditing: boolean;
   isDragging: boolean;
+  isInPinnedTab: boolean;
+  isResizing?: boolean;
   className?: string;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 };
 
 const StyledWidgetCard = styled.div<{
   onClick?: () => void;
-  widgetCardContext: WidgetCardContext;
+  pageLayoutType: PageLayoutType;
+  layoutMode: PageLayoutTabLayoutMode;
+  isInPinnedTab: boolean;
   isPageLayoutInEditMode: boolean;
   isEditing: boolean;
   isDragging: boolean;
+  isResizing: boolean;
 }>`
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  position: relative;
   height: 100%;
   width: 100%;
-  position: relative;
 
   ${({
     theme,
-    widgetCardContext,
+    pageLayoutType,
+    layoutMode,
     isPageLayoutInEditMode,
     isEditing,
     isDragging,
+    isInPinnedTab,
+    isResizing,
     onClick,
   }) => {
-    switch (widgetCardContext) {
-      case 'dashboard':
+    if (layoutMode === 'canvas') {
+      return css`
+        height: 100%;
+      `;
+    }
+
+    switch (pageLayoutType) {
+      case PageLayoutType.DASHBOARD: {
         return css`
           background: ${theme.background.secondary};
           border: 1px solid ${theme.border.color.light};
@@ -50,14 +67,11 @@ const StyledWidgetCard = styled.div<{
           ${isPageLayoutInEditMode &&
           !isDragging &&
           !isEditing &&
+          !isResizing &&
           css`
             &:hover {
-              cursor: ${isDefined(onClick) ? 'pointer' : 'default'};
               border: 1px solid ${theme.border.color.strong};
-
-              .widget-card-remove-button {
-                display: block !important;
-              }
+              cursor: ${isDefined(onClick) ? 'pointer' : 'default'};
             }
           `}
 
@@ -78,8 +92,9 @@ const StyledWidgetCard = styled.div<{
             border: 1px solid ${theme.color.blue} !important;
           `}
         `;
+      }
 
-      case 'recordPage':
+      case PageLayoutType.RECORD_PAGE: {
         return css`
           background: ${theme.background.primary};
           border: 1px solid transparent;
@@ -90,14 +105,11 @@ const StyledWidgetCard = styled.div<{
           ${isPageLayoutInEditMode &&
           !isDragging &&
           !isEditing &&
+          !isResizing &&
           css`
             &:hover {
-              cursor: ${isDefined(onClick) ? 'pointer' : 'default'};
               border: 1px solid ${theme.border.color.strong};
-
-              .widget-card-remove-button {
-                display: block !important;
-              }
+              cursor: ${isDefined(onClick) ? 'pointer' : 'default'};
             }
           `}
 
@@ -117,21 +129,36 @@ const StyledWidgetCard = styled.div<{
               ${theme.background.secondary};
             border: 1px solid ${theme.color.blue} !important;
           `}
+
+          ${isInPinnedTab &&
+          !isPageLayoutInEditMode &&
+          css`
+            border: none;
+            padding: 0;
+            border-radius: 0;
+            background: ${theme.background.secondary};
+          `}
         `;
+      }
 
       default:
-        return assertUnreachable(widgetCardContext);
+        return undefined;
     }
   }}
 `;
 
 export const WidgetCard = ({
   children,
-  widgetCardContext,
+  pageLayoutType,
+  layoutMode,
   onClick,
   isEditing,
   isDragging,
+  isInPinnedTab,
+  isResizing = false,
   className,
+  onMouseEnter,
+  onMouseLeave,
 }: WidgetCardProps) => {
   const isPageLayoutInEditMode = useRecoilComponentValue(
     isPageLayoutInEditModeComponentState,
@@ -140,11 +167,16 @@ export const WidgetCard = ({
   return (
     <StyledWidgetCard
       onClick={onClick}
-      widgetCardContext={widgetCardContext}
+      pageLayoutType={pageLayoutType}
+      layoutMode={layoutMode}
       isPageLayoutInEditMode={isPageLayoutInEditMode}
       isEditing={isEditing}
       isDragging={isDragging}
+      isInPinnedTab={isInPinnedTab}
+      isResizing={isResizing}
       className={className}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {children}
     </StyledWidgetCard>

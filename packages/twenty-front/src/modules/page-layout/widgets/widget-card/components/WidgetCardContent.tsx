@@ -1,13 +1,15 @@
+import { type PageLayoutTabLayoutMode } from '@/page-layout/types/PageLayoutTabLayoutMode';
 import { css } from '@emotion/react';
 import styled from '@emotion/styled';
 import { type ReactNode } from 'react';
-import { assertUnreachable } from 'twenty-shared/utils';
-
-import { type WidgetCardContext } from '../types/WidgetCardContext';
+import { type PageLayoutType } from '~/generated/graphql';
 
 export type WidgetCardContentProps = {
   children?: ReactNode;
-  widgetCardContext: WidgetCardContext;
+  pageLayoutType: PageLayoutType;
+  isInPinnedTab: boolean;
+  isPageLayoutInEditMode: boolean;
+  layoutMode: PageLayoutTabLayoutMode;
   className?: string;
 };
 
@@ -20,19 +22,35 @@ const StyledWidgetCardContent = styled.div<WidgetCardContentProps>`
   box-sizing: border-box;
   padding: ${({ theme }) => theme.spacing(2)};
 
-  ${({ theme, widgetCardContext }) => {
-    switch (widgetCardContext) {
-      case 'recordPage':
+  ${({
+    theme,
+    pageLayoutType,
+    layoutMode,
+    isPageLayoutInEditMode,
+    isInPinnedTab,
+  }) => {
+    if (layoutMode === 'canvas') {
+      return css`
+        padding: 0;
+      `;
+    }
+
+    switch (pageLayoutType) {
+      case 'RECORD_PAGE':
         return css`
           border: 1px solid ${theme.border.color.medium};
           border-radius: ${theme.border.radius.md};
+
+          ${isInPinnedTab &&
+          !isPageLayoutInEditMode &&
+          css`
+            border: none;
+            padding: 0;
+          `}
         `;
 
-      case 'dashboard':
-        return '';
-
       default:
-        return assertUnreachable(widgetCardContext);
+        return '';
     }
   }}
 `;

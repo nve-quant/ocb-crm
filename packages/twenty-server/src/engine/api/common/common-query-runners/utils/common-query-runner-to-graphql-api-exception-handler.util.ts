@@ -22,6 +22,8 @@ export const commonQueryRunnerToGraphqlApiExceptionHandler = (
     case CommonQueryRunnerExceptionCode.INVALID_QUERY_INPUT:
     case CommonQueryRunnerExceptionCode.UPSERT_MULTIPLE_MATCHING_RECORDS_CONFLICT:
     case CommonQueryRunnerExceptionCode.INVALID_CURSOR:
+    case CommonQueryRunnerExceptionCode.UPSERT_MAX_RECORDS_EXCEEDED:
+    case CommonQueryRunnerExceptionCode.BAD_REQUEST:
       throw new UserInputError(error);
     case CommonQueryRunnerExceptionCode.INVALID_AUTH_CONTEXT:
       throw new AuthenticationError(error);
