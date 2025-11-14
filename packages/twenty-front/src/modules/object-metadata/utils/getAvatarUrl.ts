@@ -26,7 +26,7 @@ export const getAvatarUrl = (
     );
   }
 
-  // Custom objects with website field for logo fetching
+  // Custom objects with Domain Name field for logo fetching
   if (
     objectNameSingular === 'marketMaker' ||
     objectNameSingular === 'agency' ||
@@ -34,9 +34,9 @@ export const getAvatarUrl = (
     objectNameSingular === 'assetManager' ||
     objectNameSingular === 'exchange'
   ) {
-    const websiteUrl =
-      record.website?.primaryLinkUrl || record.websitePrimaryLinkUrl;
-    return getLogoUrlFromDomainName(websiteUrl ?? '');
+    const domainUrl =
+      record.domainName?.primaryLinkUrl || record.domainNamePrimaryLinkUrl;
+    return getLogoUrlFromDomainName(domainUrl ?? '');
   }
 
   if (objectNameSingular === CoreObjectNameSingular.Person) {

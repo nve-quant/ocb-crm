@@ -318,7 +318,7 @@ export class SearchService {
       return 'domainNamePrimaryLinkUrl';
     }
 
-    // Custom objects with website field for logo fetching
+    // Custom objects with Domain Name field for logo fetching
     if (
       objectMetadataItem.nameSingular === 'marketMaker' ||
       objectMetadataItem.nameSingular === 'agency' ||
@@ -326,7 +326,7 @@ export class SearchService {
       objectMetadataItem.nameSingular === 'assetManager' ||
       objectMetadataItem.nameSingular === 'exchange'
     ) {
-      return 'websitePrimaryLinkUrl';
+      return 'domainNamePrimaryLinkUrl';
     }
 
     if (!objectMetadataItem.imageIdentifierFieldMetadataId) {
@@ -357,7 +357,7 @@ export class SearchService {
       return getLogoUrlFromDomainName(record.domainNamePrimaryLinkUrl) || '';
     }
 
-    // Custom objects with website field for logo fetching
+    // Custom objects with Domain Name field for logo fetching
     if (
       objectMetadataItem.nameSingular === 'marketMaker' ||
       objectMetadataItem.nameSingular === 'agency' ||
@@ -365,7 +365,7 @@ export class SearchService {
       objectMetadataItem.nameSingular === 'assetManager' ||
       objectMetadataItem.nameSingular === 'exchange'
     ) {
-      return getLogoUrlFromDomainName(record.websitePrimaryLinkUrl) || '';
+      return getLogoUrlFromDomainName(record.domainNamePrimaryLinkUrl) || '';
     }
 
     return imageIdentifierField &&
