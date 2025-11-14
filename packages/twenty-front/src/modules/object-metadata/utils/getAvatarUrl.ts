@@ -26,6 +26,19 @@ export const getAvatarUrl = (
     );
   }
 
+  // Custom objects with website field for logo fetching
+  if (
+    objectNameSingular === 'marketMaker' ||
+    objectNameSingular === 'agency' ||
+    objectNameSingular === 'dealFlowPartner' ||
+    objectNameSingular === 'assetManager' ||
+    objectNameSingular === 'exchange'
+  ) {
+    const websiteUrl =
+      record.website?.primaryLinkUrl || record.websitePrimaryLinkUrl;
+    return getLogoUrlFromDomainName(websiteUrl ?? '');
+  }
+
   if (objectNameSingular === CoreObjectNameSingular.Person) {
     return isDefined(record.avatarUrl)
       ? getImageAbsoluteURI({
